@@ -24,9 +24,9 @@ venv/
 .env
 
 # Configuration files
-config.yaml
-mcp_config.json
-extensions_config.json
+# config.yaml
+# mcp_config.json
+# extensions_config.json
 
 # IDE
 .idea/
@@ -37,7 +37,7 @@ coverage.xml
 coverage/
 .deer-flow/
 .claude/
-skills/custom/*
+# skills/custom/*
 logs/
 log/
 debug.log

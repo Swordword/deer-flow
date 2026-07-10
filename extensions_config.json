@@ -1,0 +1,85 @@
+{
+    "mcpInterceptors": [
+        "my_package.mcp.auth:build_auth_interceptor"
+    ],
+    "mcpServers": {
+        "popbee-mysql": {
+            "enabled": false,
+            "type": "http",
+            "command": null,
+            "args": [],
+            "env": {},
+            "url": "http://192.168.131.16:8089/creative-workshop-api/mcp/css/db?token=tk_0cbfa6e86ab949e4bda2716e84d521a0",
+            "headers": {},
+            "oauth": null,
+            "description": ""
+        },
+        "gitlab": {
+            "enabled": true,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@zereight/mcp-gitlab"
+            ],
+            "env": {
+                "GITLAB_PERSONAL_ACCESS_TOKEN": "erNsh8VtWkWJnCa-MEmX",
+                "GITLAB_API_URL": "https://gitlab.paquapp.com/api/v4"
+            },
+            "url": null,
+            "headers": {},
+            "oauth": null,
+            "description": ""
+        },
+        "popbee-mysql": {
+            "enabled": true,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@bytebase/dbhub@latest",
+                "--transport",
+                "stdio",
+                "--dsn",
+                "mysql://rw_popbee:t5du1xe2t2ag0.cn-beijing.oceanbase.aliyuncs.com:3306/popbee"
+            ],
+            "env": {},
+            "url": null,
+            "headers": {},
+            "oauth": null,
+            "description": ""
+        },
+        "github": {
+            "enabled": false,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "env": {
+                "GITHUB_TOKEN": "$GITHUB_TOKEN"
+            },
+            "url": null,
+            "headers": {},
+            "oauth": null,
+            "description": "GitHub MCP server for repository operations"
+        },
+        "postgres": {
+            "enabled": false,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-postgres",
+                "postgresql://localhost/mydb"
+            ],
+            "env": {},
+            "url": null,
+            "headers": {},
+            "oauth": null,
+            "description": "PostgreSQL database access"
+        }
+    },
+    "skills": {}
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "LLM Wiki"
+  short_description: "Read and maintain Git-backed LLM wiki knowledge."
+  default_prompt: "Use the llm-wiki skill to read or update long-lived project knowledge."
