@@ -1,0 +1,4 @@
+interface:
+  display_name: 'PRD From QA'
+  short_description: 'Turn Q&A records into Git-backed PRDs.'
+  default_prompt: 'Use the prd-from-qa skill to convert Q&A notes into a product-spec PRD with acceptance criteria and open questions.'

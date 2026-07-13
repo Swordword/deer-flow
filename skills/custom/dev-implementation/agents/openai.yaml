@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dev Implementation"
+  short_description: "Implement approved product and technical specs with tests and PR context."
+  default_prompt: "Use the dev-implementation skill to implement an approved PRD and tech-spec, run checks, and produce implementation-report, test-result, and pr-description artifacts."

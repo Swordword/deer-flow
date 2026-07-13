@@ -20,10 +20,10 @@ token_budget:
   hard_stop_threshold: 1.0
 max_recursion_limit: 1000
 models:
-  - name: gpt-5-4
-    display_name: Codex CLI / gpt-5.4
+  - name: gpt-5-5
+    display_name: Codex CLI / gpt-5.5
     use: deerflow.models.openai_codex_provider:CodexChatModel
-    model: gpt-5.4
+    model: gpt-5.5
     supports_thinking: true
     supports_reasoning_effort: true
   - name: qwen3-max

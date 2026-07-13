@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tech Spec From PRD"
+  short_description: "Generate technical specs from llm-wiki and product PRDs."
+  default_prompt: "Use the tech-spec-from-prd skill to turn an approved product-spec PRD plus llm-wiki context into tech-design, implementation-plan, test-plan, and risk-checklist documents."
