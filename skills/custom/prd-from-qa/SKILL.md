@@ -35,6 +35,7 @@ product-specs/<module>/<spec-id>/
   prd.md
   qa-source.md
   open-questions.md
+  clarification-log.md
 ```
 
 如用户只要求“整理一版 PRD 内容”而没有要求落盘，可以直接在回复中输出 PRD 草案；但进入 DeerFlow 产研流程时，应优先落盘。
@@ -46,6 +47,7 @@ product-specs/<module>/<spec-id>/
 - `references/qa-extraction.md`
 - `templates/prd.md`
 - `templates/open-questions.md`
+- `templates/clarification-log.md`
 
 如果任务涉及读取长期业务上下文，同时使用 `llm-wiki` Skill 的读取流程。
 
@@ -69,13 +71,68 @@ product-specs/<module>/<spec-id>/
 4. **生成待确认问题**
    - 对缺失、矛盾、影响范围不明、风险较高的信息，写入 `open-questions.md`。
    - 问题要可回答，避免“请补充更多信息”这类空泛问题。
+   - 将需要用户回答的问题整理为 `INTERACTIVE_CLARIFICATION_QUEUE`，供 Lead Agent 逐个调用 `ask_clarification`。
+   - 阻塞技术方案的问题必须进入交互队列；非阻塞问题可以只保留在 `open-questions.md`。
 
-5. **自检**
+5. **交互式确认**
+   - Product Agent / subagent 不能直接依赖自己调用用户交互工具；它应输出 `INTERACTIVE_CLARIFICATION_QUEUE`。
+   - Lead Agent 看到队列后，必须按优先级逐个调用 `ask_clarification`，而不是要求用户一次性手写所有答案。
+   - 用户回答后，将答案追加到 `clarification-log.md`。
+   - 根据答案更新 `prd.md` 与 `open-questions.md`：已解决问题标记为 `已确认`，仍未解决的保留为 `未确认` 或 `阻塞`。
+   - 每轮最多提出 1 个高优先级问题，或最多 3 个强相关的低风险问题；避免一次性打断用户太久。
+
+6. **自检**
    - PRD 是否能让 Tech Agent 写技术方案。
    - 验收标准是否可测试。
    - 非目标范围是否明确。
    - 权限、隐私、资金、删除、生产配置等风险是否标出。
    - 所有不确定内容是否进入 `open-questions.md`。
+   - 所有阻塞型待确认问题是否已进入 `INTERACTIVE_CLARIFICATION_QUEUE`。
+
+## 交互式问题协议
+
+当存在需要用户确认的问题时，最终回复必须包含：
+
+```yaml
+INTERACTIVE_CLARIFICATION_QUEUE:
+  module: <module>
+  spec_id: <spec-id>
+  status: needs_input | clear
+  questions:
+    - id: Q1
+      priority: high | medium | low
+      blocks_next_stage: true | false
+      clarification_type: missing_info | ambiguous_requirement | approach_choice | risk_confirmation | suggestion
+      question: <给用户看的具体问题>
+      context: <为什么需要确认>
+      options:
+        - <可选项 1>
+        - <可选项 2>
+      update_targets:
+        - product-specs/<module>/<spec-id>/prd.md
+        - product-specs/<module>/<spec-id>/open-questions.md
+```
+
+Lead Agent 应按队列调用：
+
+```text
+ask_clarification(
+  question=<question>,
+  clarification_type=<clarification_type>,
+  context=<context>,
+  options=<options or null>
+)
+```
+
+如果没有需要交互的问题，输出：
+
+```yaml
+INTERACTIVE_CLARIFICATION_QUEUE:
+  module: <module>
+  spec_id: <spec-id>
+  status: clear
+  questions: []
+```
 
 ## 写作规则
 

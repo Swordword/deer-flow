@@ -75,3 +75,28 @@
 ```md
 - 请补充导出逻辑。
 ```
+
+## 交互式问题分级
+
+待确认问题要额外标注是否阻塞下一阶段：
+
+| 类型 | 是否阻塞 Tech Agent | 处理方式 |
+| --- | --- | --- |
+| 核心验收标准缺失或冲突 | 是 | 进入 `INTERACTIVE_CLARIFICATION_QUEUE` |
+| 权限、隐私、资金、删除、生产配置边界不明 | 是 | 进入 `INTERACTIVE_CLARIFICATION_QUEUE`，使用 `risk_confirmation` |
+| 多个产品方案都合理，需要选择 | 通常是 | 进入 `INTERACTIVE_CLARIFICATION_QUEUE`，使用 `approach_choice` 并给出选项 |
+| 文案、排序、默认值等低风险细节 | 否 | 可进入低优先级队列，也可保留在 `open-questions.md` |
+| 长期知识是否沉淀到 llm-wiki | 否 | 放入“长期知识候选” |
+
+## 交互问题格式
+
+每个交互问题必须包含：
+
+- `id`：稳定编号，如 `Q1`。
+- `priority`：`high` / `medium` / `low`。
+- `blocks_next_stage`：是否阻塞进入 Tech Agent。
+- `clarification_type`：映射到 `ask_clarification` 的类型。
+- `question`：给用户看的短问题。
+- `context`：为什么需要确认，会影响什么。
+- `options`：可选。只有明确枚举或方案选择时填写。
+- `update_targets`：用户回答后要回写的文件。

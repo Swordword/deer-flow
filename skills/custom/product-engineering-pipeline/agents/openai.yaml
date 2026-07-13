@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Engineering Pipeline"
+  short_description: "Orchestrate Product, Tech, and Dev agents with handoff reminders."
+  default_prompt: "Use the product-engineering-pipeline skill to run product-agent, tech-agent, and dev-agent in sequence, preserving approval gates and NEXT_AGENT_REMINDER handoffs."
