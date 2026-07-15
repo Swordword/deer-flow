@@ -46,6 +46,19 @@ M1 product-agent
 7. 如果 reminder `status=needs_input`，先处理交互式待确认问题。
 8. 如果 reminder `status=blocked`，不要调用下一个 agent；先列出阻塞问题。
 
+## 外部 MCP 编排
+
+当本 Skill 通过 `deerflow-agent-mcp` 暴露给外部客户端时，优先使用持久化工作流工具：
+
+1. `start_product_engineering_pipeline` 创建工作流并只执行 M1；为支持首次调用断线恢复，客户端应预先生成并传入 32 位小写十六进制 `workflow_id`。
+2. 用户确认 PRD 后，以同一个 `workflow_id` 调用 `advance_product_engineering_pipeline(prd_approved=true)`，只执行 M2。
+3. 用户确认技术方案后，再调用 `advance_product_engineering_pipeline(tech_design_approved=true)`，只执行 M3。
+4. 断线或客户端重启后，使用 `get_product_engineering_pipeline_status` 恢复状态。
+5. `needs_input`、`blocked` 或遗留的 `running_*` 状态只能通过明确的 `continuation_prompt` 重试。
+6. MCP server 本身不认证调用方传入的 `user_id` 和审批布尔值；多用户环境必须由可信认证代理绑定这些参数，不能直接暴露服务或共用默认的 `mcp` 身份。
+
+工作流服务会解析 fenced yaml `AGENT_RESULT`，校验 agent、status、下一 Agent、审批 gate 与 required_inputs。契约不合法时状态必须停在 `blocked`。
+
 ## 标准 Handoff 块
 
 每个 agent 的最终回复最后必须包含 fenced yaml `AGENT_RESULT` 块。`NEXT_AGENT_REMINDER` 放在 `AGENT_RESULT.next_agent_reminder` 内，旧消费方需要时也可以单独摘要展示：
@@ -135,3 +148,4 @@ spec_id：<spec-id>
 - 不要让 `dev-agent` 在技术方案未确认时改代码。
 - 不要让任何 agent 自动合并、发布、触碰生产配置或读取密钥。
 - 涉及权限、资金、隐私、删除、生产配置时，必须要求人工确认。
+- 若需求来自飞书项目工作项，M1/M2/M3 可以通过 `FeishuProjectMcp` 读取详情、评论、关联项和元数据，但默认不得修改工作项字段、状态或评论。

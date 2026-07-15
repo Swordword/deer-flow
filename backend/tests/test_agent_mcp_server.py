@@ -108,10 +108,13 @@ async def test_run_dev_agent_requires_allowed_paths_when_not_dry_run():
         )
 
 
-def test_create_agent_mcp_server_exposes_three_tools():
+def test_create_agent_mcp_server_exposes_pipeline_and_stage_tools():
     server = agent_server.create_agent_mcp_server()
 
     assert set(server._tool_manager._tools) == {
+        "start_product_engineering_pipeline",
+        "advance_product_engineering_pipeline",
+        "get_product_engineering_pipeline_status",
         "run_product_agent",
         "run_tech_agent",
         "run_dev_agent",

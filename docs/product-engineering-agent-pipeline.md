@@ -45,6 +45,36 @@ AGENT_RESULT:
 
 The Lead Agent reads this block, summarizes the handoff to the user, and only
 calls the next agent when the user explicitly confirms the relevant gate.
+The external Agent MCP server parses and validates the same contract; malformed
+contracts leave the durable workflow in `blocked` instead of silently advancing.
+
+## Durable MCP Workflow
+
+External clients should prefer these tools over manually chaining the three
+stage tools:
+
+1. Call `start_product_engineering_pipeline` to create a workflow and run M1.
+   For connection-loss recovery during the first call, pre-generate and pass a
+   32-character lowercase hexadecimal `workflow_id`.
+2. Inspect the returned `stage` and M1 contract. After human approval, call
+   `advance_product_engineering_pipeline` with `prd_approved=true` to run M2.
+   Supply `approval_actor` and `approval_note` to retain useful audit context.
+3. After technical-design approval, call the same tool with
+   `tech_design_approved=true` to run M3.
+4. Use `get_product_engineering_pipeline_status` after reconnecting or restarting
+   a client. A persisted `running_*`, `needs_input`, or `blocked` stage can be
+   retried with `continuation_prompt`.
+
+The state retains every execution under `attempts`; retries do not erase prior
+results. Approval records include the caller-declared actor, note, and timestamp.
+These records are audit context, not proof of identity.
+
+Each advance runs exactly one agent. State is stored under
+`.deer-flow/product-engineering-pipelines/` and partitioned by a one-way hash of
+the supplied `user_id`. The standalone MCP server trusts this caller-supplied
+identity and the approval booleans; it does not authenticate either value.
+Multi-user deployments must place it behind an identity-aware proxy that binds
+both to trusted application state. Direct exposure is single-tenant only.
 
 ## Interactive PRD Questions
 
@@ -96,6 +126,17 @@ calling tech-agent.
 
 No agent should merge, release, push, touch production config, read secrets, or
 operate on production data.
+
+## Feishu Project Context
+
+When a requirement contains a Feishu Project work-item id or link, all three
+agents may use the configured `FeishuProjectMcp` connection to read the latest
+work-item detail, comments, relations, project metadata, and user metadata. Their
+tool allowlists intentionally omit Feishu Project mutation tools such as field,
+state, comment, and work-item updates. The local connection uses the remote
+Streamable HTTP endpoint directly; its deployment-wide user token is referenced
+from `.env`, not stored inline in `extensions_config.json`. This connection does
+not provide per-DeerFlow-user Feishu identity isolation.
 
 ## Write Boundaries
 

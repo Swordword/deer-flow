@@ -11,6 +11,13 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from deerflow.config import get_app_config
+from deerflow.config.runtime_paths import runtime_home
+from deerflow.mcp.product_engineering_workflow import (
+    PipelineStore,
+    advance_pipeline,
+    get_pipeline_status,
+    start_pipeline,
+)
 from deerflow.subagents import SubagentExecutor, get_subagent_config
 from deerflow.subagents.config import resolve_subagent_model_name
 from deerflow.tools import get_available_tools
@@ -169,6 +176,71 @@ def create_agent_mcp_server(*, host: str = "127.0.0.1", port: int = 8003) -> Fas
         host=host,
         port=port,
     )
+    pipeline_store = PipelineStore(runtime_home() / "product-engineering-pipelines")
+
+    @server.tool(
+        name="start_product_engineering_pipeline",
+        description="Start a durable M1 -> M2 -> M3 workflow, run M1, and stop at the PRD approval gate.",
+    )
+    async def start_product_engineering_pipeline(
+        prompt: str,
+        user_id: str = "mcp",
+        workflow_id: str | None = None,
+        thread_id: str | None = None,
+        model_name: str | None = None,
+        dev_dry_run: bool = True,
+        allowed_paths: list[str] | None = None,
+    ) -> dict[str, Any]:
+        return await start_pipeline(
+            prompt=prompt,
+            user_id=user_id,
+            runner=run_product_engineering_agent,
+            store=pipeline_store,
+            thread_id=thread_id,
+            model_name=model_name,
+            dev_dry_run=dev_dry_run,
+            allowed_paths=allowed_paths,
+            workflow_id=workflow_id,
+        )
+
+    @server.tool(
+        name="advance_product_engineering_pipeline",
+        description="Advance one durable workflow stage after approval, or retry the current stage with additional input.",
+    )
+    async def advance_product_engineering_pipeline(
+        workflow_id: str,
+        user_id: str = "mcp",
+        prd_approved: bool = False,
+        tech_design_approved: bool = False,
+        continuation_prompt: str | None = None,
+        approval_actor: str | None = None,
+        approval_note: str | None = None,
+        dry_run: bool | None = None,
+        allowed_paths: list[str] | None = None,
+    ) -> dict[str, Any]:
+        return await advance_pipeline(
+            workflow_id=workflow_id,
+            user_id=user_id,
+            runner=run_product_engineering_agent,
+            store=pipeline_store,
+            prd_approved=prd_approved,
+            tech_design_approved=tech_design_approved,
+            continuation_prompt=continuation_prompt,
+            approval_actor=approval_actor,
+            approval_note=approval_note,
+            dry_run=dry_run,
+            allowed_paths=allowed_paths,
+        )
+
+    @server.tool(
+        name="get_product_engineering_pipeline_status",
+        description="Get a durable M1/M2/M3 workflow state for the owning DeerFlow user.",
+    )
+    async def get_product_engineering_pipeline_status(
+        workflow_id: str,
+        user_id: str = "mcp",
+    ) -> dict[str, Any]:
+        return await get_pipeline_status(workflow_id=workflow_id, user_id=user_id, store=pipeline_store)
 
     @server.tool(
         name="run_product_agent",

@@ -1226,6 +1226,9 @@ sandbox:
 #   # tools, skills, and model configuration. Custom agents are available via
 #   # the `task` tool alongside built-in types (general-purpose, bash).
 #   # custom_agents:
+#   #   # A complete M1 Product -> M2 Tech -> M3 Dev example, including durable
+#   #   # MCP workflow gates and Feishu Project read-only tools, is documented in
+#   #   # docs/product-engineering-agent-pipeline.md.
 #   #   analysis:
 #   #     description: "Data analysis specialist for processing datasets and generating insights"
 #   #     system_prompt: |

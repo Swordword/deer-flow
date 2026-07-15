@@ -28,6 +28,19 @@
       ],
       "env": {},
       "description": "PostgreSQL database access"
+    },
+    "FeishuProjectMcp": {
+      "enabled": false,
+      "type": "http",
+      "command": null,
+      "args": [],
+      "env": {},
+      "url": "https://project.feishu.cn/mcp_server/v1",
+      "headers": {
+        "X-Mcp-Token": "$FEISHU_PROJECT_MCP_USER_TOKEN"
+      },
+      "oauth": null,
+      "description": "Feishu Project MCP (direct Streamable HTTP)"
     }
   },
   "skills": {}

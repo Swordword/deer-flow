@@ -256,6 +256,10 @@ subagents:
         - 原始需求或 Q&A 来源
         - 最小必要的相关 llm-wiki 文件
 
+        飞书项目输入：
+        - 若输入包含飞书项目工作项、issue 标识或链接，先用 Feishu Project MCP 读取工作项详情、评论、关联项和字段元数据。
+        - 飞书项目内容只作为需求来源证据；不要在 Product 阶段修改工作项。
+
         必需输出：
         - product-specs/<module>/<spec-id>/qa-source.md
         - product-specs/<module>/<spec-id>/prd.md
@@ -314,6 +318,14 @@ subagents:
         - read_file
         - write_file
         - str_replace
+        - FeishuProjectMcp_get_workitem_brief
+        - FeishuProjectMcp_get_workitem_field_meta
+        - FeishuProjectMcp_list_workitem_comments
+        - FeishuProjectMcp_list_workitem_relations
+        - FeishuProjectMcp_search_by_mql
+        - FeishuProjectMcp_search_project_info
+        - FeishuProjectMcp_search_user_info
+        - FeishuProjectMcp_get_node_detail
       skills:
         - llm-wiki
         - prd-from-qa
@@ -337,6 +349,10 @@ subagents:
         - product-specs/<module>/<spec-id>/open-questions.md
         - 相关 llm-wiki 文件
         - 仓库/模块范围
+
+        飞书项目输入：
+        - 若 PRD 来源于飞书项目工作项，使用 Feishu Project MCP 复核详情、评论、关联项与字段语义。
+        - 只允许读取飞书项目数据；技术设计阶段不得更新工作项状态或字段。
 
         必需输出：
         - tech-specs/<module>/<spec-id>/tech-design.md
@@ -407,6 +423,14 @@ subagents:
         - read_file
         - write_file
         - str_replace
+        - FeishuProjectMcp_get_workitem_brief
+        - FeishuProjectMcp_get_workitem_field_meta
+        - FeishuProjectMcp_list_workitem_comments
+        - FeishuProjectMcp_list_workitem_relations
+        - FeishuProjectMcp_search_by_mql
+        - FeishuProjectMcp_search_project_info
+        - FeishuProjectMcp_search_user_info
+        - FeishuProjectMcp_get_node_detail
       skills:
         - llm-wiki
         - tech-spec-from-prd
@@ -432,6 +456,10 @@ subagents:
         - tech-specs/<module>/<spec-id>/test-plan.md
         - tech-specs/<module>/<spec-id>/risk-checklist.md
         - 相关 llm-wiki 文件
+
+        飞书项目输入：
+        - 若实现对应飞书项目工作项，开工前用 Feishu Project MCP 读取最新详情、评论与关联项，确认没有新增阻塞条件。
+        - 默认只读飞书项目；不要自动更新字段、状态或评论，交由人工评审后处理。
 
         必需输出：
         - 代码变更（未阻塞时）
@@ -499,6 +527,14 @@ subagents:
         - read_file
         - write_file
         - str_replace
+        - FeishuProjectMcp_get_workitem_brief
+        - FeishuProjectMcp_get_workitem_field_meta
+        - FeishuProjectMcp_list_workitem_comments
+        - FeishuProjectMcp_list_workitem_relations
+        - FeishuProjectMcp_search_by_mql
+        - FeishuProjectMcp_search_project_info
+        - FeishuProjectMcp_search_user_info
+        - FeishuProjectMcp_get_node_detail
       skills:
         - llm-wiki
         - dev-implementation

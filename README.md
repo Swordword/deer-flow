@@ -362,7 +362,11 @@ DeerFlow can also expose the configured product-engineering subagents as an exte
 uv run deerflow-agent-mcp --transport streamable-http --host 0.0.0.0 --port 8003
 ```
 
-It provides `run_product_agent`, `run_tech_agent`, and `run_dev_agent`, backed by the `product-agent`, `tech-agent`, and `dev-agent` entries in `config.yaml -> subagents.custom_agents`. External calls enforce the approval gates: `run_tech_agent` requires `prd_approved=true`; `run_dev_agent` requires both `prd_approved=true` and `tech_design_approved=true`. `run_dev_agent` defaults to `dry_run=true`; set `dry_run=false` only with explicit `allowed_paths`.
+It provides durable workflow tools (`start_product_engineering_pipeline`, `advance_product_engineering_pipeline`, and `get_product_engineering_pipeline_status`) plus the lower-level `run_product_agent`, `run_tech_agent`, and `run_dev_agent` tools. Workflow state is stored under `.deer-flow/product-engineering-pipelines/`, partitioned by a hash of `user_id`, and each advance executes exactly one stage. The server validates every fenced YAML `AGENT_RESULT` handoff before opening the next approval gate. A client may pre-generate a 32-character lowercase hexadecimal `workflow_id` when starting, so it can query status after a connection loss.
+
+External calls enforce the approval gates: M2 requires `prd_approved=true`; M3 requires both approvals. M3 defaults to `dry_run=true`; set `dry_run=false` only with explicit `allowed_paths`. The configured M1/M2/M3 agents can also read Feishu Project work-item context through the `FeishuProjectMcp` HTTP connection, while their allowlists exclude Feishu Project write tools.
+
+For Feishu Project, set `FEISHU_PROJECT_MCP_USER_TOKEN` in the root `.env`, then enable the `FeishuProjectMcp` entry shown in `extensions_config.example.json`. This is one deployment-wide Feishu identity. The external Agent MCP server also trusts caller-supplied `user_id` and approval flags, so multi-user deployments must put it behind an identity-aware proxy that supplies and validates those values.
 
 #### IM Channels
 
