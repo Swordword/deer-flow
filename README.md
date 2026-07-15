@@ -356,6 +356,14 @@ For HTTP/SSE MCP servers, OAuth token flows are supported (`client_credentials`,
 For stdio MCP servers, per-tool call timeouts can be configured with `tool_call_timeout`.
 See the [MCP Server Guide](backend/docs/MCP_SERVER.md) for detailed instructions.
 
+DeerFlow can also expose the configured product-engineering subagents as an external MCP server. Start it from `backend/` with:
+
+```bash
+uv run deerflow-agent-mcp --transport streamable-http --host 0.0.0.0 --port 8003
+```
+
+It provides `run_product_agent`, `run_tech_agent`, and `run_dev_agent`, backed by the `product-agent`, `tech-agent`, and `dev-agent` entries in `config.yaml -> subagents.custom_agents`. External calls enforce the approval gates: `run_tech_agent` requires `prd_approved=true`; `run_dev_agent` requires both `prd_approved=true` and `tech_design_approved=true`. `run_dev_agent` defaults to `dry_run=true`; set `dry_run=false` only with explicit `allowed_paths`.
+
 #### IM Channels
 
 DeerFlow supports receiving tasks from messaging apps. Channels auto-start when configured — no public IP required for any of them.
@@ -628,6 +636,8 @@ When you install `.skill` archives through the Gateway, DeerFlow accepts standar
 Skill installs and agent-managed skill edits run through **SkillScan**, a native deterministic safety scanner before the LLM-based skill scanner. Phase 1 runs offline with no Semgrep/OpenGrep dependency, blocks high-confidence `CRITICAL` findings such as private keys or shell execution, and passes warning findings to the LLM scanner for contextual review. Set `skill_scan.enabled: false` in `config.yaml` to disable only the deterministic analyzers; safe archive extraction and the LLM scanner still run.
 
 Tools follow the same philosophy. DeerFlow comes with a core toolset — web search, web fetch, rendered web capture, file operations, bash execution — and supports custom tools via MCP servers and Python functions. Swap anything. Add anything.
+
+DeerFlow can also expose the official `lark-cli` as a controlled Agent tool group. Enable `lark_cli.enabled`, configure `LARK_CLI_APP_ID` / `LARK_CLI_APP_SECRET`, and include the `lark` tool group from `config.example.yaml`. Each DeerFlow user gets an isolated lark-cli home under `.deer-flow/lark-cli-users/<user_id>/`; DeerFlow writes a file-backed lark-cli app-secret reference there so headless servers do not need OS keychain access. Agents start login with `lark_cli_auth_start`, complete it with `lark_cli_auth_complete`, inspect status with `lark_cli_status`, and run allowlisted commands with `lark_cli_run`. The tool uses argv arrays only, never a shell, and defaults to read-only mode until `lark_cli.allow_writes` is explicitly enabled.
 
 Gateway-generated follow-up suggestions now normalize both plain-string model output and block/list-style rich content before parsing the JSON array response, so provider-specific content wrappers do not silently drop suggestions.
 

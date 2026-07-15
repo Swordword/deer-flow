@@ -3,7 +3,7 @@
 # Run 'make setup' to reconfigure, or edit this file for advanced options.
 # Full reference: config.example.yaml
 
-config_version: 19
+config_version: 20
 log_level: info
 logging:
   enhance:
@@ -51,6 +51,26 @@ tool_groups:
   - name: file:read
   - name: file:write
   - name: bash
+  - name: lark
+lark_cli:
+  enabled: true
+  executable: lark-cli
+  config_root: .deer-flow/lark-cli-users
+  brand: feishu
+  app_id: $LARK_CLI_APP_ID
+  app_secret: $LARK_CLI_APP_SECRET
+  allow_writes: false
+  allowed_services:
+    - auth
+    - contact
+    - docs
+    - drive
+    - wiki
+    - sheets
+    - calendar
+    - task
+    - minutes
+    - vc
 tools:
   - name: web_search
     use: deerflow.community.tavily.tools:web_search_tool
@@ -83,6 +103,18 @@ tools:
   - name: bash
     use: deerflow.sandbox.tools:bash_tool
     group: bash
+  - name: lark_cli_auth_start
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_start_tool
+  - name: lark_cli_auth_complete
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_complete_tool
+  - name: lark_cli_status
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_status_tool
+  - name: lark_cli_run
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_run_tool
 tool_search:
   enabled: false
 tool_output:
@@ -234,8 +266,10 @@ subagents:
         - 使用 prd-from-qa skill。
         - 不要编写技术设计。
         - 不要修改应用代码。
+        - 只允许写入 product-specs/<module>/<spec-id>/ 下的产物；不得修改源码、tech-specs、implementation-results 或 llm-wiki。
         - 不要将一次性需求细节写入 llm-wiki。
         - 区分已确认事实、假设、冲突与待解决问题。
+        - PRD 必须覆盖：目标用户、核心场景、非目标范围、验收标准、边界条件、权限/数据/埋点影响、风险与待确认项；缺少阻塞信息时 status=needs_input。
         - 若仍存在阻塞性产品问题，输出 INTERACTIVE_CLARIFICATION_QUEUE。
         - Product Agent 不应假设自己能直接完成用户交互；它应生成交互队列，由 Lead Agent 调用 ask_clarification。
 
@@ -243,7 +277,25 @@ subagents:
         1. 已生成/更新文件的摘要。
         2. 阻塞性问题（如有）。
         3. 一个 INTERACTIVE_CLARIFICATION_QUEUE 块。
-        4. 一个 NEXT_AGENT_REMINDER 块：
+        4. 最后输出一个 fenced yaml AGENT_RESULT 块；其中必须包含 NEXT_AGENT_REMINDER：
+
+        AGENT_RESULT:
+          agent: product-agent
+          status: ready | needs_input | blocked
+          artifacts:
+            - product-specs/<module>/<spec-id>/prd.md
+          blockers: []
+          interactive_clarification_queue: null | <INTERACTIVE_CLARIFICATION_QUEUE>
+          next_agent_reminder:
+            next_agent: tech-agent
+            gate: prd_approval_required
+            status: ready | needs_input | blocked
+            required_inputs:
+              - product-specs/<module>/<spec-id>/prd.md
+              - product-specs/<module>/<spec-id>/open-questions.md
+              - relevant llm-wiki paths
+            suggested_prompt: |
+              PRD 审批通过后，使用 tech-agent 为 <module>/<spec-id> 生成 tech-specs。
 
         NEXT_AGENT_REMINDER:
           next_agent: tech-agent
@@ -295,15 +347,44 @@ subagents:
         规则：
         - 使用 tech-spec-from-prd skill。
         - 不要修改应用代码。
+        - 只允许写入 tech-specs/<module>/<spec-id>/ 下的产物；不得修改源码、product-specs、implementation-results 或 llm-wiki。
         - 不要创建 commit、分支或 PR。
         - 不要绕过未解决的阻塞性 PRD 问题。
         - 以相对代码路径作为依据引用。
+        - 必须先阅读 PRD、open-questions、相关 llm-wiki 和代码证据；未读到足够代码证据时 status=blocked。
+        - 每个关键技术判断都必须附上相对路径证据；不能只基于猜测写最终方案。
         - 若高风险工作需审批，在 risk-checklist.md 与交接信息中标注。
 
         最终回复格式：
         1. 已生成/更新文件的摘要。
         2. 阻塞性技术或风险问题（如有）。
-        3. 一个 NEXT_AGENT_REMINDER 块：
+        3. 最后输出一个 fenced yaml AGENT_RESULT 块；其中必须包含 NEXT_AGENT_REMINDER：
+
+        AGENT_RESULT:
+          agent: tech-agent
+          status: ready | blocked
+          artifacts:
+            - tech-specs/<module>/<spec-id>/tech-design.md
+            - tech-specs/<module>/<spec-id>/implementation-plan.md
+            - tech-specs/<module>/<spec-id>/test-plan.md
+            - tech-specs/<module>/<spec-id>/risk-checklist.md
+          evidence:
+            - path: relative/path
+              finding: brief finding
+          blockers: []
+          next_agent_reminder:
+            next_agent: dev-agent
+            gate: tech_design_approval_required
+            status: ready | blocked
+            required_inputs:
+              - product-specs/<module>/<spec-id>/prd.md
+              - tech-specs/<module>/<spec-id>/tech-design.md
+              - tech-specs/<module>/<spec-id>/implementation-plan.md
+              - tech-specs/<module>/<spec-id>/test-plan.md
+              - tech-specs/<module>/<spec-id>/risk-checklist.md
+              - relevant llm-wiki paths
+            suggested_prompt: |
+              技术设计审批通过后，使用 dev-agent 实现 <module>/<spec-id>。
 
         NEXT_AGENT_REMINDER:
           next_agent: dev-agent
@@ -362,15 +443,43 @@ subagents:
         - 使用 dev-implementation skill。
         - 不要重新定义产品需求。
         - 不要静默偏离已审批的技术方案。
+        - 开工前必须读取 risk-checklist.md；若存在未确认高风险项或审批缺失，status=blocked，不要改代码。
+        - 若收到 dry_run=true 或外部 MCP guardrails 指示 dry-run，只能产出计划、预期改动、测试命令和阻塞项，不得修改任何文件。
+        - 若收到 allowed_paths，仅允许修改这些路径；缺少必要路径时 status=blocked。
         - 未经明确审批，不要触碰禁止目录或高风险文件。
         - 除非用户明确要求，否则不要 merge、发布、push 或创建 PR。
         - 若实现被阻塞，将阻塞原因写入 implementation-report.md，不要强行改代码。
+        - 完成后必须记录实际执行的测试/检查命令及结果；未执行测试时必须说明原因。
 
         最终回复格式：
         1. 代码与产物变更摘要。
         2. 测试/检查结果。
         3. 剩余阻塞项或评审备注。
-        4. 一个 NEXT_AGENT_REMINDER 块：
+        4. 最后输出一个 fenced yaml AGENT_RESULT 块；其中必须包含 NEXT_AGENT_REMINDER：
+
+        AGENT_RESULT:
+          agent: dev-agent
+          status: ready | blocked
+          artifacts:
+            - implementation-results/<module>/<spec-id>/implementation-report.md
+            - implementation-results/<module>/<spec-id>/test-result.md
+            - implementation-results/<module>/<spec-id>/pr-description.md
+          changed_files: []
+          checks:
+            - command: <command>
+              status: passed | failed | not_run
+              notes: <notes>
+          blockers: []
+          next_agent_reminder:
+            next_agent: human-review
+            gate: code_review_required
+            status: ready | blocked
+            required_inputs:
+              - implementation-results/<module>/<spec-id>/implementation-report.md
+              - implementation-results/<module>/<spec-id>/test-result.md
+              - implementation-results/<module>/<spec-id>/pr-description.md
+            suggested_prompt: |
+              请人工评审者审查 diff、PRD、tech-spec、测试结果与风险清单。
 
         NEXT_AGENT_REMINDER:
           next_agent: human-review

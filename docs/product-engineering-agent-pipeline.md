@@ -23,21 +23,28 @@ M1 product-agent
 
 ## Handoff Reminder
 
-Each agent must end with a `NEXT_AGENT_REMINDER` block:
+Each agent must end with a fenced yaml `AGENT_RESULT` block. The next-stage
+handoff lives under `next_agent_reminder`:
 
 ```yaml
-NEXT_AGENT_REMINDER:
-  next_agent: tech-agent
-  gate: prd_approval_required
+AGENT_RESULT:
+  agent: product-agent
   status: ready
-  required_inputs:
+  artifacts:
     - product-specs/<module>/<spec-id>/prd.md
-  suggested_prompt: |
-    Use tech-agent to generate tech-specs for <module>/<spec-id> after PRD approval.
+  blockers: []
+  next_agent_reminder:
+    next_agent: tech-agent
+    gate: prd_approval_required
+    status: ready
+    required_inputs:
+      - product-specs/<module>/<spec-id>/prd.md
+    suggested_prompt: |
+      Use tech-agent to generate tech-specs for <module>/<spec-id> after PRD approval.
 ```
 
-The Lead Agent reads this block, summarizes it to the user, and only calls the
-next agent when the user explicitly confirms the relevant gate.
+The Lead Agent reads this block, summarizes the handoff to the user, and only
+calls the next agent when the user explicitly confirms the relevant gate.
 
 ## Interactive PRD Questions
 
@@ -89,3 +96,12 @@ calling tech-agent.
 
 No agent should merge, release, push, touch production config, read secrets, or
 operate on production data.
+
+## Write Boundaries
+
+- `product-agent` may only write `product-specs/<module>/<spec-id>/`.
+- `tech-agent` may only write `tech-specs/<module>/<spec-id>/` and must cite
+  relative code paths for technical findings.
+- `dev-agent` must read `risk-checklist.md` before editing. External MCP calls
+  default to `dry_run=true`; when `dry_run=false`, the MCP caller must provide
+  `allowed_paths` and the agent may only modify those paths.

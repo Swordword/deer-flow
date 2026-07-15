@@ -23,6 +23,7 @@ dependencies = [
     "langgraph-runtime-inmem>=0.28.0",
     "markdownify>=1.2.2",
     "markitdown[all,xlsx]>=0.0.1a2",
+    "mcp>=1.27.0",
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
     "readabilipy>=0.3.0",
@@ -43,6 +44,7 @@ dependencies = [
 
 [project.scripts]
 deerflow = "deerflow.tui.cli:main"
+deerflow-agent-mcp = "deerflow.mcp.agent_server:main"
 
 [project.optional-dependencies]
 # Terminal workbench (TUI). Kept optional so the core harness install stays lean;

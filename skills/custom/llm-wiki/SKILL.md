@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-description: 管理和使用 Git 化的 LLM wiki，用于沉淀长期有效的产品、业务、技术、代码地图和检索索引知识。当用户要求创建、读取、更新、校验、组织、索引、同步或基于 llm-wiki 推理时使用；当处理 Product Agent、Tech Agent、Dev Agent 上下文时使用；当判断信息应放入 llm-wiki 还是 product-specs/tech-specs 时使用；当把 llm-wiki 接入 Qdrant/向量检索、PRD Git 化流程、代码地图或 Agent Skills 时使用。
+description: 管理和使用 Git 化的 LLM wiki，用于沉淀长期有效的产品、业务、技术、数据库表结构、代码地图和检索索引知识。当用户要求创建、读取、更新、校验、组织、索引、同步或基于 llm-wiki 推理时使用；当处理 Product Agent、Tech Agent、Dev Agent 上下文时使用；当生成或更新 wiki 需要结合 popbee-mysql MCP 读取数据库表结构时使用；当判断信息应放入 llm-wiki 还是 product-specs/tech-specs 时使用；当把 llm-wiki 接入 Qdrant/向量检索、PRD Git 化流程、代码地图或 Agent Skills 时使用。
 ---
 
 # LLM Wiki
@@ -13,7 +13,7 @@ description: 管理和使用 Git 化的 LLM wiki，用于沉淀长期有效的�
 
 | 内容 | 放到 |
 | --- | --- |
-| 稳定业务术语、模块规则、状态机、API 地图、代码地图、Owner、通用模式 | `llm-wiki/` |
+| 稳定业务术语、模块规则、状态机、API 地图、数据库表结构摘要、代码地图、Owner、通用模式 | `llm-wiki/` |
 | 某个具体需求、验收标准、原型、非目标范围、待确认问题 | `product-specs/<module>/<spec-id>/` |
 | 某个具体需求的实现方案、API 契约、测试计划、风险清单 | `tech-specs/<module>/<spec-id>/` |
 | Agent 操作规程、模板、工具规则 | DeerFlow `skills/` |
@@ -30,23 +30,29 @@ description: 管理和使用 Git 化的 LLM wiki，用于沉淀长期有效的�
    - `llm-wiki/modules/<module>/business-rules.md`
    - `llm-wiki/modules/<module>/states.md`
    - `llm-wiki/modules/<module>/api-map.md`
+   - `llm-wiki/modules/<module>/db-map.md`
    - `llm-wiki/modules/<module>/code-map.md`
-3. Product Agent 场景只读取当前需求或明确相似的历史 `product-specs/`。
-4. Tech Agent 场景读取已确认 PRD，再读取 wiki 中的代码/API 地图。
-5. Dev Agent 场景读取已确认 PRD、已确认技术方案，以及保持业务正确性所需的最小 wiki 文件。
-6. 如果使用向量检索，必须按 metadata 过滤（`doc_scope`、`module`、`spec_id`），不要直接检索整个仓库。
+3. 生成或更新 wiki 且内容涉及数据模型、字段含义、状态枚举、API 入参/返回、列表筛选、权限范围、订单/库存/机器/用户等持久化对象时，必须结合 `popbee-mysql` MCP 读取数据库表结构：
+   - 优先用 MCP 查询相关表的 DDL/字段/索引/注释/外键或关系线索。
+   - 只读取当前模块需要的最小表集合；不要全库扫描。
+   - 将表结构作为“来源证据”，不要把未验证的字段含义写成事实。
+   - 如果 `popbee-mysql` MCP 不可用，标记 `Needs verification: database schema unavailable`，并列出需要补查的表或关键词。
+4. Product Agent 场景只读取当前需求或明确相似的历史 `product-specs/`。
+5. Tech Agent 场景读取已确认 PRD，再读取 wiki 中的代码/API/数据库地图。
+6. Dev Agent 场景读取已确认 PRD、已确认技术方案，以及保持业务正确性所需的最小 wiki 文件。
+7. 如果使用向量检索，必须按 metadata 过滤（`doc_scope`、`module`、`spec_id`），不要直接检索整个仓库。
 
 ## 写入流程
 
 修改 `llm-wiki/` 前，先判断新增的是哪类知识：
 
 1. **新的长期领域规则**：更新所属模块文件，通常是 `business-rules.md` 或 `states.md`。
-2. **新的页面/API/代码位置**：更新 `pages.md`、`api-map.md` 或 `code-map.md`。
+2. **新的页面/API/数据库/代码位置**：更新 `pages.md`、`api-map.md`、`db-map.md` 或 `code-map.md`。
 3. **新的术语**：更新 `glossary.md`。
 4. **带取舍的决策**：在 `llm-wiki/decisions/` 下新增或更新 ADR。
 5. **历史案例**：在 `llm-wiki/examples/` 下添加短摘要，并链接 PRD、技术方案和 MR。
 
-每次 wiki 更新都应尽量包含来源指针：代码路径、PRD 路径、技术方案路径、MR/commit 链接或文档链接。不要粘贴大段代码；用摘要加源文件链接。
+每次 wiki 更新都应尽量包含来源指针：代码路径、PRD 路径、技术方案路径、MR/commit 链接、文档链接或 `popbee-mysql` MCP 查到的表/字段来源。不要粘贴大段代码或完整 DDL；用摘要加源文件/表名/字段名链接。
 
 ## 推荐仓库结构
 
@@ -63,6 +69,7 @@ llm-wiki/
       states.md
       pages.md
       api-map.md
+      db-map.md
       code-map.md
       ownership.md
       faq.md
@@ -96,6 +103,7 @@ doc_scope=tech_spec     per-requirement implementation plan
 
 - 信息是否按生命周期放在正确目录。
 - 每条新增或修改的 wiki 事实是否有来源或明确 Owner。
+- 涉及数据库的事实是否通过 `popbee-mysql` MCP 查过表结构；若未查到，是否标记 `Needs verification`。
 - 更新是否聚焦模块知识，而不是复制 PRD。
 - 同仓库内的 PRD、技术方案、代码或 MR 链接是否使用相对路径。
 - index manifest 是否只保存元数据；真实向量数据应保存在 Qdrant 或其他向量库。

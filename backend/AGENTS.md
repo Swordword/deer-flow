@@ -280,6 +280,20 @@ Configuration priority:
 Config values starting with `$` are resolved as environment variables (e.g., `$OPENAI_API_KEY`).
 `ModelConfig` also declares `use_responses_api` and `output_version` so OpenAI `/v1/responses` can be enabled explicitly while still using `langchain_openai:ChatOpenAI`.
 
+**lark-cli Agent tools**: `lark_cli.enabled` gates the built-in `lark_cli_*`
+tools (`packages/harness/deerflow/tools/builtins/lark_cli_tool.py`). They wrap
+the official `lark-cli` via `asyncio.create_subprocess_exec` with argv arrays
+only — never shell strings — and assign each DeerFlow user an isolated HOME
+under `lark_cli.config_root/<user_id>/` so Feishu/Lark tokens do not cross
+accounts. Initialization writes `config.json` with an app-secret
+`{"source":"file","id":...}` reference plus a 0600 secret file; do not call
+`lark-cli config init` from the tool path, because headless servers may not have
+OS keychain access. `lark_cli_auth_start` / `lark_cli_auth_complete` own the
+split device login flow and keep `device_code` in a short-lived backend session;
+do not expose `auth login` through generic command execution. `lark_cli_run` is
+read-only by default (`allow_writes: false`) and must preserve the exit-10
+`confirmation_required` protocol rather than auto-adding `--yes`.
+
 **Extensions Configuration** (`extensions_config.json`):
 
 MCP servers and skills are configured together in `extensions_config.json` in project root:
@@ -416,6 +430,7 @@ Additional providers also live here (`boxlite`, `brave`, `browserless`, `crawl4a
 ### MCP System (`packages/harness/deerflow/mcp/`)
 
 - Uses `langchain-mcp-adapters` `MultiServerMCPClient` for multi-server management
+- `agent_server.py` exposes the configured M1/M2/M3 product-engineering subagents as an external MCP server via the `deerflow-agent-mcp` console script. It provides `run_product_agent`, `run_tech_agent`, and `run_dev_agent`; HTTP clients can run it with `uv run deerflow-agent-mcp --transport streamable-http --host 0.0.0.0 --port 8003`. The external boundary enforces pipeline gates: `tech-agent` requires `prd_approved=true`, `dev-agent` requires both PRD and tech-design approval, and non-dry-run dev calls require `allowed_paths`.
 - **Lazy initialization**: Tools loaded on first use via `get_cached_mcp_tools()`
 - **Cache invalidation**: Detects config file changes via mtime comparison
 - **Transports**: stdio (command-based), SSE, HTTP

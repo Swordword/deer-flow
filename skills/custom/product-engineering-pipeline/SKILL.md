@@ -48,17 +48,23 @@ M1 product-agent
 
 ## 标准 Handoff 块
 
-每个 agent 的最终回复必须包含：
+每个 agent 的最终回复最后必须包含 fenced yaml `AGENT_RESULT` 块。`NEXT_AGENT_REMINDER` 放在 `AGENT_RESULT.next_agent_reminder` 内，旧消费方需要时也可以单独摘要展示：
 
 ```yaml
-NEXT_AGENT_REMINDER:
-  next_agent: <agent-name>
-  gate: <approval-or-review-gate>
+AGENT_RESULT:
+  agent: <agent-name>
   status: ready | needs_input | blocked
-  required_inputs:
-    - <path-or-input>
-  suggested_prompt: |
-    <prompt for the next agent>
+  artifacts:
+    - <path>
+  blockers: []
+  next_agent_reminder:
+    next_agent: <agent-name>
+    gate: <approval-or-review-gate>
+    status: ready | needs_input | blocked
+    required_inputs:
+      - <path-or-input>
+    suggested_prompt: |
+      <prompt for the next agent>
 ```
 
 ## 交互式待确认问题
@@ -122,6 +128,9 @@ spec_id：<spec-id>
 
 ## 安全边界
 
+- `product-agent` 只允许写 `product-specs/<module>/<spec-id>/`。
+- `tech-agent` 只允许写 `tech-specs/<module>/<spec-id>/`，必须基于代码证据输出技术判断，不得修改源码。
+- `dev-agent` 必须先读取 `risk-checklist.md`；外部 MCP 调用中 `dry_run=true` 时不得改文件，`dry_run=false` 时只能改 `allowed_paths` 内的文件。
 - 不要让 `tech-agent` 在 PRD 未确认时生成最终技术方案。
 - 不要让 `dev-agent` 在技术方案未确认时改代码。
 - 不要让任何 agent 自动合并、发布、触碰生产配置或读取密钥。

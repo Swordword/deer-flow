@@ -1,4 +1,4 @@
 interface:
   display_name: "LLM Wiki"
-  short_description: "Read and maintain Git-backed LLM wiki knowledge."
-  default_prompt: "Use the llm-wiki skill to read or update long-lived project knowledge."
+  short_description: "Read and maintain Git-backed LLM wiki knowledge with DB schema evidence."
+  default_prompt: "Use the llm-wiki skill to read or update long-lived project knowledge, using popbee-mysql MCP for database schema evidence when relevant."

@@ -15,7 +15,7 @@
 # ============================================================================
 # Bump this number when the config schema changes.
 # Run `make config-upgrade` to merge new fields into your local config.yaml.
-config_version: 19
+config_version: 20
 
 # ============================================================================
 # Logging
@@ -579,6 +579,35 @@ tool_groups:
   - name: file:read
   - name: file:write
   - name: bash
+  - name: lark
+
+# ============================================================================
+# lark-cli Agent Tool Configuration
+# ============================================================================
+# Controlled integration with the official lark-cli (https://github.com/larksuite/cli).
+# When enabled, DeerFlow agents can call the lark_cli_* tools listed below.
+# Each DeerFlow user gets an isolated lark-cli HOME/config directory under
+# config_root/<user_id>, so Feishu/Lark authorization does not leak between users.
+#
+# lark_cli:
+#   enabled: false
+#   executable: lark-cli
+#   config_root: .deer-flow/lark-cli-users
+#   brand: feishu
+#   app_id: $LARK_CLI_APP_ID
+#   app_secret: $LARK_CLI_APP_SECRET
+#   allow_writes: false
+#   allowed_services:
+#     - auth
+#     - contact
+#     - docs
+#     - drive
+#     - wiki
+#     - sheets
+#     - calendar
+#     - task
+#     - minutes
+#     - vc
 
 # ============================================================================
 # Tools Configuration
@@ -860,6 +889,23 @@ tools:
   - name: bash
     group: bash
     use: deerflow.sandbox.tools:bash_tool
+
+  # lark-cli tools (inactive unless lark_cli.enabled: true)
+  - name: lark_cli_auth_start
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_start_tool
+
+  - name: lark_cli_auth_complete
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_complete_tool
+
+  - name: lark_cli_status
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_status_tool
+
+  - name: lark_cli_run
+    group: lark
+    use: deerflow.tools.builtins.lark_cli_tool:lark_cli_run_tool
 
 # ============================================================================
 # Tool Search Configuration (Deferred Tool Loading)

@@ -4,7 +4,7 @@
     ],
     "mcpServers": {
         "popbee-mysql": {
-            "enabled": false,
+            "enabled": true,
             "type": "http",
             "command": null,
             "args": [],
@@ -31,8 +31,8 @@
             "oauth": null,
             "description": ""
         },
-        "popbee-mysql": {
-            "enabled": true,
+        "old-popbee-mysql": {
+            "enabled": false,
             "type": "stdio",
             "command": "npx",
             "args": [

@@ -22,6 +22,15 @@ SUBAGENT_TOOLS = [
     # task_status_tool is no longer exposed to LLM (backend handles polling internally)
 ]
 
+_LARK_CLI_TOOL_USES = frozenset(
+    {
+        "deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_start_tool",
+        "deerflow.tools.builtins.lark_cli_tool:lark_cli_auth_complete_tool",
+        "deerflow.tools.builtins.lark_cli_tool:lark_cli_run_tool",
+        "deerflow.tools.builtins.lark_cli_tool:lark_cli_status_tool",
+    }
+)
+
 
 def _is_host_bash_tool(tool: object) -> bool:
     """Return True if the tool config represents a host-bash execution surface."""
@@ -69,6 +78,9 @@ def get_available_tools(
     # Do not expose host bash by default when LocalSandboxProvider is active.
     if not is_host_bash_allowed(config):
         tool_configs = [tool for tool in tool_configs if not _is_host_bash_tool(tool)]
+
+    if not getattr(getattr(config, "lark_cli", None), "enabled", False):
+        tool_configs = [tool for tool in tool_configs if getattr(tool, "use", None) not in _LARK_CLI_TOOL_USES]
 
     loaded_tools_raw = [(cfg, resolve_variable(cfg.use, BaseTool)) for cfg in tool_configs]
 
