@@ -294,6 +294,24 @@ do not expose `auth login` through generic command execution. `lark_cli_run` is
 read-only by default (`allow_writes: false`) and must preserve the exit-10
 `confirmation_required` protocol rather than auto-adding `--yes`.
 
+**Repository snapshot Agent tools**: `repo_snapshot.enabled` gates
+`repo_prepare` and `repo_snapshot_status`
+(`packages/harness/deerflow/tools/builtins/repo_snapshot_tool.py`). Repository
+URLs are administrator-owned aliases from `repo_snapshot.repositories`; the
+model cannot supply arbitrary clone URLs. Gateway serializes mirror updates
+with a cross-process file lock, invokes Git through
+`asyncio.create_subprocess_exec` without a shell, supplies HTTPS credentials
+only through `GIT_ASKPASS`, and masks the token from command output. A shared
+bare mirror lives under `repo_snapshot.cache_root`; each prepared thread clone
+uses `--reference-if-able --dissociate`, so its `.git` object database remains
+self-contained when only `/mnt/user-data` is visible inside an AIO/Kubernetes
+sandbox. The snapshot manifest pins `repository`, `ref`, and `commit_sha` under
+`{base_dir}/users/{user_id}/threads/{thread_id}/user-data/workspace/repos/`.
+Relative cache roots resolve under `DEER_FLOW_HOME`; the default `git-cache`
+therefore lives at `.deer-flow/git-cache` and is already covered by the
+production Docker mount. Keep M1 code-free; M2 prepares and records the
+snapshot in `code-evidence.json`; M3 verifies the same SHA before editing.
+
 **Extensions Configuration** (`extensions_config.json`):
 
 MCP servers and skills are configured together in `extensions_config.json` in project root:

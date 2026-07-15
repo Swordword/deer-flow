@@ -15,7 +15,7 @@
 # ============================================================================
 # Bump this number when the config schema changes.
 # Run `make config-upgrade` to merge new fields into your local config.yaml.
-config_version: 20
+config_version: 21
 
 # ============================================================================
 # Logging
@@ -580,6 +580,7 @@ tool_groups:
   - name: file:write
   - name: bash
   - name: lark
+  - name: repo
 
 # ============================================================================
 # lark-cli Agent Tool Configuration
@@ -608,6 +609,27 @@ tool_groups:
 #     - task
 #     - minutes
 #     - vc
+
+# ============================================================================
+# Persistent Repository Snapshot Configuration
+# ============================================================================
+# Gateway prepares an administrator-approved repository once, pins it to a
+# commit SHA, and places a self-contained clone in the current thread workspace.
+# M2/M3 then use local grep/read/bash instead of fetching source through GitLab
+# MCP on every turn. cache_root is persisted by the standard DEER_FLOW_HOME mount.
+#
+# repo_snapshot:
+#   enabled: false
+#   git_executable: git
+#   cache_root: git-cache  # relative to DEER_FLOW_HOME
+#   username: oauth2
+#   token: $REPO_SNAPSHOT_TOKEN
+#   command_timeout_seconds: 300
+#   repositories:
+#     popbee-frontend:
+#       url: https://gitlab.example.com/group/popbee-frontend.git
+#       default_ref: main
+#       workspace_name: popbee-frontend
 
 # ============================================================================
 # Tools Configuration
@@ -906,6 +928,15 @@ tools:
   - name: lark_cli_run
     group: lark
     use: deerflow.tools.builtins.lark_cli_tool:lark_cli_run_tool
+
+  # Persistent repository snapshots (inactive unless repo_snapshot.enabled: true)
+  - name: repo_prepare
+    group: repo
+    use: deerflow.tools.builtins.repo_snapshot_tool:repo_prepare_tool
+
+  - name: repo_snapshot_status
+    group: repo
+    use: deerflow.tools.builtins.repo_snapshot_tool:repo_snapshot_status_tool
 
 # ============================================================================
 # Tool Search Configuration (Deferred Tool Loading)

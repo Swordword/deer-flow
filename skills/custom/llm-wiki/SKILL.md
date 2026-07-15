@@ -37,10 +37,11 @@ description: 管理和使用 Git 化的 LLM wiki，用于沉淀长期有效的�
    - 只读取当前模块需要的最小表集合；不要全库扫描。
    - 将表结构作为“来源证据”，不要把未验证的字段含义写成事实。
    - 如果 `popbee-mysql` MCP 不可用，标记 `Needs verification: database schema unavailable`，并列出需要补查的表或关键词。
-4. Product Agent 场景只读取当前需求或明确相似的历史 `product-specs/`。
-5. Tech Agent 场景读取已确认 PRD，再读取 wiki 中的代码/API/数据库地图。
-6. Dev Agent 场景读取已确认 PRD、已确认技术方案，以及保持业务正确性所需的最小 wiki 文件。
-7. 如果使用向量检索，必须按 metadata 过滤（`doc_scope`、`module`、`spec_id`），不要直接检索整个仓库。
+4. 生成或更新 `code-map.md` 时，若 `repo_prepare` 可用，必须基于固定 commit 的本地快照用 `rg`/`grep` 收集路径和符号；GitLab MCP 只查 MR/Commit 元数据或缺失代码，不逐文件遍历仓库。
+5. Product Agent 场景只读取当前需求或明确相似的历史 `product-specs/`。
+6. Tech Agent 场景读取已确认 PRD，再读取 wiki 中的代码/API/数据库地图。
+7. Dev Agent 场景读取已确认 PRD、已确认技术方案，以及保持业务正确性所需的最小 wiki 文件。
+8. 如果使用向量检索，必须按 metadata 过滤（`doc_scope`、`module`、`spec_id`），不要直接检索整个仓库。
 
 ## 写入流程
 

@@ -3,7 +3,7 @@
 # Run 'make setup' to reconfigure, or edit this file for advanced options.
 # Full reference: config.example.yaml
 
-config_version: 20
+config_version: 21
 log_level: info
 logging:
   enhance:
@@ -52,6 +52,7 @@ tool_groups:
   - name: file:write
   - name: bash
   - name: lark
+  - name: repo
 lark_cli:
   enabled: true
   executable: lark-cli
@@ -71,6 +72,14 @@ lark_cli:
     - task
     - minutes
     - vc
+repo_snapshot:
+  enabled: false
+  git_executable: git
+  cache_root: git-cache
+  username: oauth2
+  token: null
+  command_timeout_seconds: 300
+  repositories: {}
 tools:
   - name: web_search
     use: deerflow.community.tavily.tools:web_search_tool
@@ -100,6 +109,12 @@ tools:
   - name: str_replace
     use: deerflow.sandbox.tools:str_replace_tool
     group: file:write
+  - name: repo_prepare
+    group: repo
+    use: deerflow.tools.builtins.repo_snapshot_tool:repo_prepare_tool
+  - name: repo_snapshot_status
+    group: repo
+    use: deerflow.tools.builtins.repo_snapshot_tool:repo_snapshot_status_tool
   - name: bash
     use: deerflow.sandbox.tools:bash_tool
     group: bash
@@ -354,11 +369,18 @@ subagents:
         - 若 PRD 来源于飞书项目工作项，使用 Feishu Project MCP 复核详情、评论、关联项与字段语义。
         - 只允许读取飞书项目数据；技术设计阶段不得更新工作项状态或字段。
 
+        代码读取策略：
+        - 若 repo_snapshot 已启用，先调用 repo_prepare；后续只在返回的 workspace_path 中使用 grep/read_file/bash 读取源码。
+        - 记录 repo_prepare 返回的 commit_sha，M2 与 M3 必须使用同一份固定代码快照。
+        - 禁止通过 GitLab MCP 逐文件遍历源码；GitLab MCP 只用于 Issue/MR/Commit 元数据或本地快照缺少代码时的兜底。
+        - 先读取 llm-wiki code-map，再用 rg/grep 定位符号；每轮只读取支持当前判断的最小文件集合。
+
         必需输出：
         - tech-specs/<module>/<spec-id>/tech-design.md
         - tech-specs/<module>/<spec-id>/implementation-plan.md
         - tech-specs/<module>/<spec-id>/test-plan.md
         - tech-specs/<module>/<spec-id>/risk-checklist.md
+        - tech-specs/<module>/<spec-id>/code-evidence.json
 
         规则：
         - 使用 tech-spec-from-prd skill。
@@ -384,6 +406,7 @@ subagents:
             - tech-specs/<module>/<spec-id>/implementation-plan.md
             - tech-specs/<module>/<spec-id>/test-plan.md
             - tech-specs/<module>/<spec-id>/risk-checklist.md
+            - tech-specs/<module>/<spec-id>/code-evidence.json
           evidence:
             - path: relative/path
               finding: brief finding
@@ -398,6 +421,7 @@ subagents:
               - tech-specs/<module>/<spec-id>/implementation-plan.md
               - tech-specs/<module>/<spec-id>/test-plan.md
               - tech-specs/<module>/<spec-id>/risk-checklist.md
+              - tech-specs/<module>/<spec-id>/code-evidence.json
               - relevant llm-wiki paths
             suggested_prompt: |
               技术设计审批通过后，使用 dev-agent 实现 <module>/<spec-id>。
@@ -412,6 +436,7 @@ subagents:
             - tech-specs/<module>/<spec-id>/implementation-plan.md
             - tech-specs/<module>/<spec-id>/test-plan.md
             - tech-specs/<module>/<spec-id>/risk-checklist.md
+            - tech-specs/<module>/<spec-id>/code-evidence.json
             - relevant llm-wiki paths
           suggested_prompt: |
             技术设计审批通过后，使用 dev-agent 实现 <module>/<spec-id>。
@@ -421,6 +446,8 @@ subagents:
         - glob
         - grep
         - read_file
+        - repo_prepare
+        - repo_snapshot_status
         - write_file
         - str_replace
         - FeishuProjectMcp_get_workitem_brief
@@ -456,10 +483,16 @@ subagents:
         - tech-specs/<module>/<spec-id>/test-plan.md
         - tech-specs/<module>/<spec-id>/risk-checklist.md
         - 相关 llm-wiki 文件
+        - tech-specs/<module>/<spec-id>/code-evidence.json
 
         飞书项目输入：
         - 若实现对应飞书项目工作项，开工前用 Feishu Project MCP 读取最新详情、评论与关联项，确认没有新增阻塞条件。
         - 默认只读飞书项目；不要自动更新字段、状态或评论，交由人工评审后处理。
+
+        代码读取策略：
+        - 优先复用 M2 code-evidence.json 中的 repository、commit_sha、workspace_path、路径和符号证据。
+        - 调用 repo_snapshot_status 确认本地快照仍是 M2 固定的 commit_sha；不一致时 status=blocked。
+        - 仅在证据失效时使用本地 rg/grep 补查；禁止通过 GitLab MCP 重新逐文件遍历源码。
 
         必需输出：
         - 代码变更（未阻塞时）
@@ -525,6 +558,8 @@ subagents:
         - glob
         - grep
         - read_file
+        - repo_prepare
+        - repo_snapshot_status
         - write_file
         - str_replace
         - FeishuProjectMcp_get_workitem_brief

@@ -25,6 +25,14 @@ M1 product-agent
 | `tech-agent` | 已确认 PRD + `llm-wiki` + 代码证据 | `tech-specs/<module>/<spec-id>/tech-design.md`、`implementation-plan.md`、`test-plan.md`、`risk-checklist.md` | `tech-spec-from-prd` |
 | `dev-agent` | 已确认 PRD + 已确认技术方案 + `llm-wiki` | 代码改动、`implementation-report.md`、`test-result.md`、`pr-description.md` | `dev-implementation` |
 
+## 代码快照交接
+
+- M1 不读取代码。
+- M2 在技术设计开始时调用一次 `repo_prepare`，把 `workspace_path` 与固定 `commit_sha` 写入 `code-evidence.json`。
+- M3 调用 `repo_snapshot_status`，仅在 SHA 一致时复用同一线程快照；不要重新远程遍历仓库。
+- GitLab MCP 只承担 Issue/MR/Commit/Diff 元数据和本地缺失代码兜底。
+- `repo_snapshot` 未启用或仓库别名未配置时，M2 必须明确阻塞原因，不要退化为大量逐文件 MCP 调用。
+
 ## Lead Agent 编排规则
 
 1. 启动阶段时，使用 `task` 工具选择对应 subagent：
@@ -143,6 +151,7 @@ spec_id：<spec-id>
 
 - `product-agent` 只允许写 `product-specs/<module>/<spec-id>/`。
 - `tech-agent` 只允许写 `tech-specs/<module>/<spec-id>/`，必须基于代码证据输出技术判断，不得修改源码。
+- `tech-agent` 必须把仓库、固定 commit SHA、路径、符号和结论写入 `code-evidence.json`。
 - `dev-agent` 必须先读取 `risk-checklist.md`；外部 MCP 调用中 `dry_run=true` 时不得改文件，`dry_run=false` 时只能改 `allowed_paths` 内的文件。
 - 不要让 `tech-agent` 在 PRD 未确认时生成最终技术方案。
 - 不要让 `dev-agent` 在技术方案未确认时改代码。

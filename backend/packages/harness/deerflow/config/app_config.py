@@ -24,6 +24,7 @@ from deerflow.config.memory_config import MemoryConfig, load_memory_config_from_
 from deerflow.config.model_config import ModelConfig
 from deerflow.config.read_before_write_config import ReadBeforeWriteConfig
 from deerflow.config.reload_boundary import format_field_description
+from deerflow.config.repo_snapshot_config import RepoSnapshotConfig
 from deerflow.config.run_events_config import RunEventsConfig
 from deerflow.config.runtime_paths import existing_project_file
 from deerflow.config.safety_finish_reason_config import SafetyFinishReasonConfig
@@ -179,6 +180,7 @@ class AppConfig(BaseModel):
     )
     loop_detection: LoopDetectionConfig = Field(default_factory=LoopDetectionConfig, description="Loop detection middleware configuration")
     lark_cli: LarkCliConfig = Field(default_factory=LarkCliConfig, description="Controlled lark-cli Agent tool configuration")
+    repo_snapshot: RepoSnapshotConfig = Field(default_factory=RepoSnapshotConfig, description="Controlled local repository snapshot configuration")
     tool_progress: ToolProgressConfig = Field(default_factory=ToolProgressConfig, description="Tool progress state machine middleware configuration")
     read_before_write: ReadBeforeWriteConfig = Field(default_factory=ReadBeforeWriteConfig, description="Read-before-write file gate middleware configuration")
     safety_finish_reason: SafetyFinishReasonConfig = Field(default_factory=SafetyFinishReasonConfig, description="Provider safety-filter finish_reason interception middleware configuration")

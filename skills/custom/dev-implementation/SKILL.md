@@ -23,6 +23,7 @@ llm-wiki
 - `tech-specs/<module>/<spec-id>/implementation-plan.md`
 - `tech-specs/<module>/<spec-id>/test-plan.md`
 - `tech-specs/<module>/<spec-id>/risk-checklist.md`
+- `tech-specs/<module>/<spec-id>/code-evidence.json`
 
 按需读取：
 
@@ -61,11 +62,13 @@ implementation-results/<module>/<spec-id>/
    - 读取 PRD、技术方案、实现计划、测试计划、风险清单。
    - 确认没有阻塞型待确认问题。
    - 确认允许修改范围、禁止修改范围和高风险审批要求。
+   - 调用 `repo_snapshot_status`，确认本地 `commit_sha` 与 `code-evidence.json` 一致；不一致时停止并要求重新生成技术证据。
 
 2. **建立任务清单**
    - 从 `implementation-plan.md` 拆出小步骤。
    - 每一步绑定目标文件范围和验证方式。
    - 不要在未完成核对前直接改代码。
+   - 优先从 `code-evidence.json` 的路径和符号开始；只在证据失效时使用本地 `rg`/`grep` 补查。
 
 3. **按最小范围修改代码**
    - 先读再写，保持修改局部。
@@ -107,6 +110,8 @@ implementation-results/<module>/<spec-id>/
 
 ## Git 规则
 
+- 代码实现必须在 `repo_prepare` 返回的本地 `workspace_path` 中进行。
+- 禁止通过 GitLab MCP 逐文件读取或重新遍历源码；GitLab MCP 仅用于 MR/Issue/Commit 元数据和缺失代码兜底。
 - 默认可以修改工作区文件，但不要自动合并主分支。
 - 只有用户明确要求时才创建 commit、branch、push 或 PR/MR。
 - 创建 PR/MR 前，必须生成或更新 `pr-description.md`。

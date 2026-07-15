@@ -31,6 +31,13 @@ _LARK_CLI_TOOL_USES = frozenset(
     }
 )
 
+_REPO_SNAPSHOT_TOOL_USES = frozenset(
+    {
+        "deerflow.tools.builtins.repo_snapshot_tool:repo_prepare_tool",
+        "deerflow.tools.builtins.repo_snapshot_tool:repo_snapshot_status_tool",
+    }
+)
+
 
 def _is_host_bash_tool(tool: object) -> bool:
     """Return True if the tool config represents a host-bash execution surface."""
@@ -81,6 +88,9 @@ def get_available_tools(
 
     if not getattr(getattr(config, "lark_cli", None), "enabled", False):
         tool_configs = [tool for tool in tool_configs if getattr(tool, "use", None) not in _LARK_CLI_TOOL_USES]
+
+    if not getattr(getattr(config, "repo_snapshot", None), "enabled", False):
+        tool_configs = [tool for tool in tool_configs if getattr(tool, "use", None) not in _REPO_SNAPSHOT_TOOL_USES]
 
     loaded_tools_raw = [(cfg, resolve_variable(cfg.use, BaseTool)) for cfg in tool_configs]
 

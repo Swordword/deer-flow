@@ -17,6 +17,7 @@ def _make_config(*, allow_host_bash: bool, sandbox_use: str = "deerflow.sandbox.
             allow_host_bash=allow_host_bash,
         ),
         lark_cli=SimpleNamespace(enabled=False),
+        repo_snapshot=SimpleNamespace(enabled=False),
         tool_search=SimpleNamespace(enabled=False),
         get_model_config=lambda name: None,
     )
@@ -107,6 +108,32 @@ def test_get_available_tools_hides_lark_cli_tools_when_disabled(monkeypatch):
 
     assert "lark_cli_run" not in names
     assert "deerflow.tools.builtins.lark_cli_tool:lark_cli_run_tool" not in resolved_uses
+
+
+def test_get_available_tools_hides_repo_snapshot_tools_when_disabled(monkeypatch):
+    config = _make_config(
+        allow_host_bash=False,
+        extra_tools=[
+            SimpleNamespace(
+                name="repo_prepare",
+                group="repo",
+                use="deerflow.tools.builtins.repo_snapshot_tool:repo_prepare_tool",
+            )
+        ],
+    )
+    monkeypatch.setattr("deerflow.tools.tools.get_app_config", lambda: config)
+    resolved_uses = []
+
+    def fake_resolve(use, _base):
+        resolved_uses.append(use)
+        return SimpleNamespace(name="ls")
+
+    monkeypatch.setattr("deerflow.tools.tools.resolve_variable", fake_resolve)
+
+    names = [tool.name for tool in get_available_tools(include_mcp=False, subagent_enabled=False)]
+
+    assert "repo_prepare" not in names
+    assert "deerflow.tools.builtins.repo_snapshot_tool:repo_prepare_tool" not in resolved_uses
 
 
 def test_is_host_bash_allowed_defaults_false_when_sandbox_missing():
